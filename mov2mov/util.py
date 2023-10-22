@@ -104,36 +104,34 @@ def get_mov_all_images(file, frames, rgb=False):
 
 
 def images_to_video(images, frames, out_path):
-    if platform.system() == 'Windows':
-        return images_to_video_win(images, frames, out_path)
-    else:
-        return images_to_video_mac(images, frames, out_path)
-
-
-def images_to_video_win(images, frames, out_path):
     # 判断out_path是否存在,不存在则创建
     if not os.path.exists(os.path.dirname(out_path)):
         os.makedirs(os.path.dirname(out_path), exist_ok=True)
 
+    if platform.system() == 'Windows':
+        return images_to_video_win(images, frames, out_path)
+    elif platform.system() == 'Linux':
+        return images_to_video_posix(images, frames, out_path, 'mp4v')
+    else:
+        return images_to_video_posix(images, frames, out_path, 'avc1')
+
+
+def images_to_video_win(images, frames, out_path):
     with imageio.v2.get_writer(out_path, format='ffmpeg', mode='I', fps=frames, codec='libx264') as writer:
         for img in images:
             writer.append_data(numpy.asarray(img))
     return out_path
 
 
-def images_to_video_mac(images, frames, out_path):
+def images_to_video_posix(images, frames, out_path, codec='avc1'):
     if len(images) <= 0:
         return None
-    # 判断out_path是否存在,不存在则创建
-    if not os.path.exists(os.path.dirname(out_path)):
-        os.makedirs(os.path.dirname(out_path), exist_ok=True)
 
-    fourcc = cv2.VideoWriter_fourcc(*'avc1')
-    if len(images) > 0:
-        img = images[0]
-        img_width, img_height = img.size
-        w = img_width
-        h = img_height
+    fourcc = cv2.VideoWriter_fourcc(*codec)
+    img = images[0]
+    img_width, img_height = img.size
+    w = img_width
+    h = img_height
     video = cv2.VideoWriter(out_path, fourcc, frames, (w, h))
     for image in images:
         img = cv2.cvtColor(numpy.asarray(image), cv2.COLOR_RGB2BGR)
